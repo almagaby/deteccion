@@ -74,8 +74,8 @@ def api_detect():
         result = detector.detect_tumor(filepath)
 
         return jsonify({
-            'has_tumor': result['has_tumor'],
-            'confidence': f"{result['confidence']:.2f}%"
+            'has_tumor': bool (result['has_tumor']),
+            'confidence': float(result['confidence'])
         })
     
     return jsonify({'error': 'Invalid file type'}), 400
