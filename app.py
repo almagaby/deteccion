@@ -1,5 +1,5 @@
 import os
-from flask import Flask, render_template, request, redirect, url_for
+from flask import Flask, render_template, request, redirect, url_for, jsonfy
 from werkzeug.utils import secure_filename
 from processing.tumor_detector import TumorDetector
 from processing.image_processor import generate_visualizations
@@ -56,6 +56,28 @@ def upload_file():
                                    confidence=f"{result['confidence']:.2f}%")
     
     return render_template('index.html')
+@app.route('/api/detect', methods=['POST'])
+def api_detect():
+    if 'file' not in request.files:
+        return jsonify({'error': 'No file uploaded'}), 400
+    
+    file = request.files['file']
+    if file.filename == '':
+        return jsonify({'error': 'Empty filename'}), 400
 
+    if file and allowed_file(file.filename):
+        filename = secure_filename(file.filename)
+        filepath = os.path.join(app.config['UPLOAD_FOLDER'], filename)
+        file.save(filepath)
+
+        detector = TumorDetector()
+        result = detector.detect_tumor(filepath)
+
+        return jsonify({
+            'has_tumor': result['has_tumor'],
+            'confidence': f"{result['confidence']:.2f}%"
+        })
+    
+    return jsonify({'error': 'Invalid file type'}), 400
 if __name__ == '__main__':
     app.run(debug=True)
