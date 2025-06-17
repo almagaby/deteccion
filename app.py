@@ -60,7 +60,7 @@ def upload_file():
 def api_detect():
     if 'file' not in request.files:
         return jsonify({'error': 'No file uploaded'}), 400
-    
+
     file = request.files['file']
     if file.filename == '':
         return jsonify({'error': 'Empty filename'}), 400
@@ -73,11 +73,22 @@ def api_detect():
         detector = TumorDetector()
         result = detector.detect_tumor(filepath)
 
+        base_name = os.path.splitext(filename)[0]
+        result_images = generate_visualizations(
+            filepath,
+            app.config['RESULT_FOLDER'],
+            base_name
+        )
+
+        # URL externa al resultado generado
+        result_url = url_for('static', filename=f'results/{result_images[0]}', _external=True)
+
         return jsonify({
-            'has_tumor': bool (result['has_tumor']),
-            'confidence': float(result['confidence'])
+            'has_tumor': bool(result['has_tumor']),
+            'confidence': float(result['confidence']),
+            'result_image_url': result_url
         })
-    
+
     return jsonify({'error': 'Invalid file type'}), 400
 if __name__ == '__main__':
     app.run(debug=True)
